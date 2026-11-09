@@ -2,6 +2,8 @@
 
 A Windows app that counts chests and ammo crates and shows your current match, all-time total, and average per match. Stats save automatically.
 
+![Fortnite Chest Tracker](docs/screenshot.png)
+
 ## Play
 
 1. Open `fortnite-chest-tracker.exe` and play Fortnite in **English** and **Windowed Fullscreen**.
@@ -23,3 +25,11 @@ Use **Edit OBS overlay** to style the cards or write custom text with `{match}`,
 Install Rust for Windows (MSVC) and Visual Studio Build Tools with the C++ workload and Windows SDK. Run `cargo build --release --locked`, then open `target\release\fortnite-chest-tracker.exe`.
 
 For replay support, install the .NET 10 SDK and Git, then run `pwsh -File replay-tools/build-native.ps1`. The decoder uses [LED-N’s Fortnite ChestCounter](https://github.com/LED-N/Fortnite-ChestCounter).
+
+## License
+
+Released under the [MIT License](LICENSE). The replay decoder is built from [LED-N’s Fortnite ChestCounter](https://github.com/LED-N/Fortnite-ChestCounter) (MIT) and Shiqan’s FortniteReplayDecompressor (MIT); their license files are copied next to the built decoder by `build-native.ps1` and must be kept with any distributed build.
+
+## Disclaimer
+
+This project is not affiliated with or endorsed by Epic Games, Inc. Fortnite is a trademark of Epic Games, Inc.
