@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fortnite Chest Tracker</title>
+<style>
+  [hidden] { display: none !important; }
+  body { margin: 0; padding: 8px; background: transparent; }
+  .widget {
+    display: inline-flex;
+    align-items: center;
+    gap: 20px;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 10px 16px;
+    border: 1px solid var(--panel-border, #ffffff29);
+    border-radius: 12px;
+    background: var(--panel-bg, #101722ed);
+    color: var(--text, #fff);
+    font: var(--weight, 600) 14px var(--font, system-ui), sans-serif;
+    text-align: var(--alignment, left);
+  }
+  .stat { display: grid; gap: 4px; min-width: 100px; }
+  .value {
+    color: var(--accent, #ffd464);
+    font-size: var(--size, 32px);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .widget.text {
+    display: inline-block;
+    font-size: var(--size, 32px);
+    line-height: 1.2;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .widget.text, .value {
+    -webkit-text-stroke: var(--stroke-width, 0px) var(--stroke-color, #000);
+    paint-order: stroke fill;
+    text-shadow: var(--shadow, none);
+  }
+  body.editor {
+    color-scheme: dark;
+    padding: 24px;
+    background: #101722;
+    color: #f4f6fa;
+    font: 15px system-ui, sans-serif;
+  }
+  .editor-page { max-width: 700px; margin: auto; }
+  .editor-page h1 { font-size: 24px; margin: 0 0 16px; }
+  .editor-page h2 { font-size: 15px; margin: 0 0 10px; }
+  form { margin-bottom: 24px; }
+  fieldset { border: 0; margin: 0; padding: 0; }
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  label { display: grid; gap: 5px; }
+  select, textarea, input, button {
+    box-sizing: border-box;
+    font: inherit;
+    color: inherit;
+    background: #1c2635;
+    border: 1px solid #47566c;
+    border-radius: 6px;
+    padding: 6px 8px;
+    min-width: 0;
+  }
+  input[type=color] { width: 100%; min-height: 36px; }
+  textarea { width: 100%; resize: vertical; }
+  button { cursor: pointer; }
+  button:disabled { opacity: .65; cursor: default; }
+  button[type=submit] { background: #ffd464; color: #101722; border-color: transparent; }
+  details { margin-bottom: 14px; }
+  summary { cursor: pointer; }
+  details .controls { margin-top: 10px; }
+  .tokens { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 16px; }
+  .actions { display: flex; align-items: center; gap: 12px; }
+  #save-status { color: #b6c2d5; }
+  #preview {
+    min-height: 84px;
+    padding: 8px;
+    border-radius: 8px;
+    background: repeating-conic-gradient(#273245 0% 25%, #323e51 0% 50%) 0 0 / 20px 20px;
+  }
+</style>
+<div id="widget" class="widget" aria-label="Chests opened">
+  <div class="stat"><span>Chests this match</span><span class="value" id="current">—</span></div>
+  <div class="stat"><span>Chests all time</span><span class="value" id="all_time">—</span></div>
+  <div class="stat"><span>Avg. per match</span><span class="value" id="average">—</span></div>
+  <div id="custom" hidden></div>
+</div>
+<template id="editor">
+  <main class="editor-page">
+    <h1>OBS Overlay Editor</h1>
+    <form>
+      <fieldset disabled>
+        <div class="controls">
+          <label>Layout
+            <select name="layout"><option value="cards">Cards</option><option value="text">Custom text</option></select>
+          </label>
+          <label>Font
+            <select name="font">
+              <option value="system-ui">System</option><option>Arial</option><option>Segoe UI</option>
+              <option>Georgia</option><option>Consolas</option><option>Impact</option>
+            </select>
+          </label>
+          <label>Size (px)<input type="number" name="size" min="12" max="128" required></label>
+          <label>Text color<input type="color" name="text_color"></label>
+          <label id="accent-option">Number color<input type="color" name="accent_color"></label>
+          <label>Background color<input type="color" name="background_color"></label>
+          <label>Background opacity (%)<input type="number" name="background_opacity" min="0" max="100" required></label>
+        </div>
+        <details>
+          <summary>Text effects</summary>
+          <div class="controls">
+            <label>Weight
+              <select name="weight">
+                <option value="400">Regular</option><option value="600">Semibold</option>
+                <option value="700">Bold</option><option value="900">Black</option>
+              </select>
+            </label>
+            <label>Alignment
+              <select name="alignment"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+            </label>
+            <label>Stroke width (px)<input type="number" name="stroke_width" min="0" max="8" required></label>
+            <label>Stroke color<input type="color" name="stroke_color"></label>
+            <label>Shadow blur (px)<input type="number" name="shadow_blur" min="0" max="24" required></label>
+            <label>Shadow color<input type="color" name="shadow_color"></label>
+          </div>
+        </details>
+        <div id="text-options" hidden>
+          <label>Overlay text<textarea name="template" rows="5" maxlength="1000"></textarea></label>
+          <div class="tokens" aria-label="Insert variable">
+            <button type="button" data-token="{match}">{match}</button>
+            <button type="button" data-token="{total}">{total}</button>
+            <button type="button" data-token="{average}">{average}</button>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit">Save to OBS</button>
+          <button type="button" id="reset-styling">Reset styling</button>
+          <output id="save-status" role="status"></output>
+        </div>
+      </fieldset>
+    </form>
+    <h2>Live preview</h2>
+    <div id="preview"></div>
+  </main>
+</template>
+<script>
+  const widget = document.querySelector("#widget");
+  const custom = document.querySelector("#custom");
+  const fields = ["current", "all_time", "average"];
+  let stats = { current: "—", all_time: "—", average: "—" };
+
+  function render(appearance) {
+    const useText = appearance.layout === "text";
+    const alpha = Math.round(appearance.background_opacity * 255 / 100).toString(16).padStart(2, "0");
+    widget.classList.toggle("text", useText);
+    widget.style.setProperty("--font", appearance.font === "system-ui" ? appearance.font : '"' + appearance.font + '"');
+    widget.style.setProperty("--size", appearance.size + "px");
+    widget.style.setProperty("--text", appearance.text_color);
+    widget.style.setProperty("--accent", appearance.accent_color);
+    widget.style.setProperty("--panel-bg", appearance.background_color + alpha);
+    widget.style.setProperty("--panel-border", appearance.background_opacity ? "#ffffff29" : "transparent");
+    const typography = appearance.typography;
+    widget.style.setProperty("--weight", typography.weight);
+    widget.style.setProperty("--alignment", typography.alignment);
+    widget.style.setProperty("--stroke-width", typography.stroke_width + "px");
+    widget.style.setProperty("--stroke-color", typography.stroke_color);
+    widget.style.setProperty("--shadow", typography.shadow_blur ? `0 2px ${typography.shadow_blur}px ${typography.shadow_color}` : "none");
+
+    for (const field of fields) {
+      const value = document.getElementById(field);
+      value.textContent = stats[field];
+      value.parentElement.hidden = useText;
+    }
+    custom.hidden = !useText;
+    if (useText) {
+      const values = { match: stats.current, total: stats.all_time, average: stats.average };
+      custom.textContent = appearance.template.replace(/\{(match|total|average)\}/g, (_, name) => values[name]);
+    }
+  }
+
+  const editing = location.pathname === "/editor";
+  let update = render;
+
+  if (editing) {
+    document.title = "OBS Overlay Editor";
+    document.body.classList.add("editor");
+    document.body.append(document.querySelector("#editor").content.cloneNode(true));
+    document.querySelector("#preview").append(widget);
+    const form = document.querySelector("form");
+    const fieldset = form.querySelector("fieldset");
+    const status = document.querySelector("#save-status");
+    const textarea = form.elements.namedItem("template");
+    const save = form.querySelector('button[type="submit"]');
+    const reset = document.querySelector("#reset-styling");
+
+    function fillForm(saved) {
+      for (const [name, value] of Object.entries({ ...saved, ...saved.typography })) {
+        const field = form.elements.namedItem(name);
+        if (field) field.value = value;
+      }
+    }
+
+    function draft() {
+      const data = Object.fromEntries(new FormData(form));
+      const { weight, alignment, stroke_width, stroke_color, shadow_blur, shadow_color, ...appearance } = data;
+      appearance.size = Number(appearance.size) || 32;
+      appearance.background_opacity = Number(appearance.background_opacity);
+      appearance.typography = {
+        weight: Number(weight), alignment,
+        stroke_width: Number(stroke_width), stroke_color,
+        shadow_blur: Number(shadow_blur), shadow_color,
+      };
+      return appearance;
+    }
+
+    function preview() {
+      const data = draft();
+      document.querySelector("#text-options").hidden = data.layout !== "text";
+      document.querySelector("#accent-option").hidden = data.layout === "text";
+      render(data);
+    }
+
+    update = saved => {
+      if (fieldset.disabled) {
+        fillForm(saved);
+        fieldset.disabled = false;
+      }
+      preview();
+    };
+
+    form.addEventListener("input", () => {
+      status.textContent = "";
+      preview();
+    });
+    reset.addEventListener("click", async () => {
+      reset.disabled = true;
+      try {
+        const response = await fetch("/appearance/defaults");
+        if (!response.ok) throw Error("Defaults unavailable");
+        const defaults = await response.json();
+        fillForm({ ...defaults, layout: form.elements.namedItem("layout").value, template: textarea.value });
+        status.textContent = "Default styling previewed. Save to apply.";
+        preview();
+      } catch {
+        status.textContent = "Could not load the default styling.";
+      } finally {
+        reset.disabled = false;
+      }
+    });
+    form.querySelectorAll("[data-token]").forEach(button => {
+      button.addEventListener("click", () => {
+        const token = button.dataset.token;
+        if (textarea.value.length - (textarea.selectionEnd - textarea.selectionStart) + token.length > textarea.maxLength) return;
+        textarea.setRangeText(token, textarea.selectionStart, textarea.selectionEnd, "end");
+        textarea.focus();
+        status.textContent = "";
+        preview();
+      });
+    });
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const body = JSON.stringify(draft());
+      save.disabled = true;
+      status.textContent = "Saving…";
+      try {
+        const response = await fetch("/appearance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        });
+        status.textContent = response.ok ? "Saved. The OBS overlay updates automatically." : await response.text();
+      } catch {
+        status.textContent = "Could not reach the tracker.";
+      } finally {
+        save.disabled = false;
+      }
+    });
+  }
+
+  async function refresh() {
+    try {
+      const response = await fetch("/stats", { cache: "no-store" });
+      if (response.ok) {
+        stats = await response.json();
+        update(stats.appearance);
+      }
+    } catch {
+      // Retain the last values while the tracker is restarting.
+    } finally {
+      setTimeout(refresh, 250);
+    }
+  }
+
+  refresh();
+</script>
+</html>

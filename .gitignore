@@ -1,0 +1,7 @@
+/target/
+/.tooling/
+/replay-tools/node_modules/
+/replay-tools/bin/
+/replay-tools/native/bin/
+/replay-tools/native/obj/
+/replay-tools/native/vendor/

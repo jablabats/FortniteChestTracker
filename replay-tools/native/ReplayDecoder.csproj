@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PublishTrimmed>false</PublishTrimmed>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <ProjectReference Include="$(UpstreamRoot)/lib/FortniteReplayReader/FortniteReplayReader.csproj" />
+    <Compile Include="$(UpstreamRoot)/src/ChestCounter/ReplayAnalyzer.cs" Link="ReplayAnalyzer.cs" />
+    <Compile Include="$(UpstreamRoot)/src/ChestCounter/Models.cs" Link="Models.cs" />
+    <Compile Include="$(UpstreamRoot)/src/ChestCounter/Lang.cs" Link="Lang.cs" />
+  </ItemGroup>
+</Project>
